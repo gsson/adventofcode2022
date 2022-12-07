@@ -3,5 +3,12 @@
 version = 3
 
 [[package]]
+name = "adventofcode2022-common"
+version = "0.0.1"
+
+[[package]]
 name = "adventofcode2022-problems"
 version = "0.0.1"
+dependencies = [
+ "adventofcode2022-common",
+]

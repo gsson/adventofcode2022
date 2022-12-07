@@ -1,3 +1,5 @@
+use adventofcode2022_common::iter::UnwrapSingle;
+
 const INPUT: &str = include_str!("input.txt");
 
 const LOSE: i32 = 0;
@@ -18,8 +20,8 @@ fn score(their_move: i32, your_move: i32) -> i32 {
 fn columns(line: &str) -> (i32, i32) {
     let (abc, xyz) = line.split_once(' ').expect("the inquisition");
     let (abc, xyz) = (
-        (abc.bytes().next().unwrap() - b'A') as i32,
-        (xyz.bytes().next().unwrap() - b'X') as i32,
+        abc.chars().unwrap_single() as i32 - 'A' as i32,
+        xyz.chars().unwrap_single() as i32 - 'X' as i32,
     );
     (abc, xyz)
 }
