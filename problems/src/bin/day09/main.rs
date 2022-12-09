@@ -1,3 +1,4 @@
+use std::cmp::max;
 use std::collections::HashSet;
 use std::ops::{Add, Sub};
 
@@ -24,6 +25,15 @@ impl Coordinate {
             x: self.x.abs(),
             y: self.y.abs(),
         }
+    }
+    fn signum(&self) -> Self {
+        Self {
+            x: self.x.signum(),
+            y: self.y.signum(),
+        }
+    }
+    fn max_component(&self) -> i32 {
+        max(self.x, self.y)
     }
 }
 
@@ -73,23 +83,11 @@ fn parse_moves(input: &str) -> impl Iterator<Item = Coordinate> + '_ {
 
 fn move_tail(head: &Coordinate, tail: &Coordinate) -> Coordinate {
     let diff = *head - *tail;
-    let abs_diff = diff.abs();
-
-    let x = if abs_diff.x == 2 {
-        head.x - diff.x.signum()
-    } else if abs_diff.y == 2 {
-        head.x
+    if diff.abs().max_component() <= 1 {
+        *tail
     } else {
-        tail.x
-    };
-    let y = if abs_diff.y == 2 {
-        head.y - diff.y.signum()
-    } else if abs_diff.x == 2 {
-        head.y
-    } else {
-        tail.y
-    };
-    Coordinate { x, y }
+        *tail + diff.signum()
+    }
 }
 
 fn part1(input: &str) -> usize {
