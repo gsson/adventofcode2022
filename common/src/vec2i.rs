@@ -223,6 +223,12 @@ pub struct Bounds(Point, Point);
 impl Bounds {
     const SIZE_ADJUST: Simd<i32, 2> = Simd::from_array([1, 1]);
 
+    #[inline]
+    pub fn is_empty(&self) -> bool {
+        self.0 .0.simd_gt(self.1 .0).any()
+    }
+
+    #[inline]
     pub const fn new(top: i32, right: i32, bottom: i32, left: i32) -> Self {
         Self(Point::new(left, top), Point::new(right, bottom))
     }
@@ -337,6 +343,15 @@ impl Debug for Size {
             .field("height", &self.height())
             .finish()
     }
+}
+
+#[test]
+fn test_bounds_is_empty() {
+    assert!(!Bounds::new(0, 1, 1, 0).is_empty());
+    assert!(!Bounds::new(0, 0, 0, 0).is_empty());
+    assert!(Bounds::new(0, -1, 1, 0).is_empty());
+    assert!(Bounds::new(0, -1, -1, 0).is_empty());
+    assert!(Bounds::new(0, 1, -1, 0).is_empty());
 }
 
 #[test]
