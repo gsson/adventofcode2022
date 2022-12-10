@@ -100,9 +100,13 @@ impl Debug for Point {
 }
 
 pub const UP: Vector = Vector::new(0, -1);
+pub const UP_RIGHT: Vector = Vector::new(1, -1);
 pub const RIGHT: Vector = Vector::new(1, 0);
+pub const DOWN_RIGHT: Vector = Vector::new(1, 1);
 pub const DOWN: Vector = Vector::new(0, 1);
+pub const DOWN_LEFT: Vector = Vector::new(-1, 1);
 pub const LEFT: Vector = Vector::new(-1, 0);
+pub const UP_LEFT: Vector = Vector::new(-1, -1);
 
 #[derive(Copy, Clone, Default, Ord, PartialOrd, Eq, PartialEq, Hash)]
 pub struct Vector(Simd<i32, 2>);
