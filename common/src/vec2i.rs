@@ -74,12 +74,6 @@ impl From<[i32; 2]> for Point {
     }
 }
 
-impl From<Point> for (i32, i32) {
-    fn from(value: Point) -> Self {
-        (value.x(), value.y())
-    }
-}
-
 impl Add<Vector> for Point {
     type Output = Point;
 
