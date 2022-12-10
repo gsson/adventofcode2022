@@ -1,5 +1,5 @@
 use std::fmt::{Debug, Formatter};
-use std::ops::{Add, Div, Mul, Neg, Sub};
+use std::ops::{Add, Div, Mul, Neg, Range, Sub};
 use std::simd::Which::{First, Second};
 use std::simd::{simd_swizzle, Simd, SimdInt, SimdOrd, SimdPartialOrd};
 /*
@@ -302,6 +302,10 @@ impl Bounds {
         IndexIter::new(*self)
     }
 
+    pub fn iter_row_indices(&self) -> IndexRowIter {
+        IndexRowIter::new(*self)
+    }
+
     #[inline]
     pub fn size(&self) -> Size {
         Size(self.1 .0 - self.0 .0 + Self::SIZE_ADJUST)
@@ -394,6 +398,48 @@ impl Iterator for IndexIter {
         } else {
             self.next_index += 1;
             Some(index)
+        }
+    }
+}
+
+pub struct IndexRowIter {
+    end: usize,
+    width: usize,
+    next_row_start: usize,
+}
+
+impl IndexRowIter {
+    const EMPTY: IndexRowIter = Self {
+        end: 0,
+        width: 0,
+        next_row_start: 1,
+    };
+
+    fn new(bounds: Bounds) -> Self {
+        if bounds.is_empty() {
+            Self::EMPTY
+        } else {
+            let width = bounds.size().width() as usize;
+            Self {
+                end: bounds.index(&bounds.bottom_right()),
+                width,
+                next_row_start: bounds.index(&bounds.top_left()),
+            }
+        }
+    }
+}
+
+impl Iterator for IndexRowIter {
+    type Item = Range<usize>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let row_start = self.next_row_start;
+        if row_start > self.end {
+            None
+        } else {
+            let next_row_start = row_start + self.width;
+            self.next_row_start = next_row_start;
+            Some(row_start..next_row_start)
         }
     }
 }
@@ -497,6 +543,18 @@ fn test_bounds_iter_points() {
     assert_eq!(Some(Point::new(-1, 2)), i.next());
     assert_eq!(Some(Point::new(0, 2)), i.next());
     assert_eq!(Some(Point::new(1, 2)), i.next());
+
+    assert_eq!(None, i.next());
+}
+
+#[test]
+fn test_bounds_iter_row_indices() {
+    let bounds = Bounds::new(-1, 1, 2, -2);
+    let mut i = bounds.iter_row_indices();
+    assert_eq!(Some(0..4), i.next());
+    assert_eq!(Some(4..8), i.next());
+    assert_eq!(Some(8..12), i.next());
+    assert_eq!(Some(12..16), i.next());
 
     assert_eq!(None, i.next());
 }
