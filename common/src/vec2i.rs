@@ -482,6 +482,18 @@ impl Size {
     }
 }
 
+impl From<Size> for [i32; 2] {
+    fn from(value: Size) -> Self {
+        value.0.to_array()
+    }
+}
+
+impl From<[i32; 2]> for Size {
+    fn from(value: [i32; 2]) -> Self {
+        Self(Simd::from_array(value))
+    }
+}
+
 impl Debug for Size {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Size")
