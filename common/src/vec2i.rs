@@ -302,6 +302,59 @@ impl Bounds {
     pub fn size(&self) -> Size {
         Size(self.1 .0 - self.0 .0 + Self::SIZE_ADJUST)
     }
+
+    #[inline]
+    pub fn iter_points(&self) -> PointIter {
+        PointIter::new(*self)
+    }
+}
+
+pub struct PointIter {
+    bounds: Bounds,
+    step: Vector,
+    wrap: Vector,
+    point: Option<Point>,
+}
+
+impl PointIter {
+    const EMPTY: PointIter = Self {
+        bounds: Bounds::new(0, -1, -1, 0),
+        step: Vector::new(0, 0),
+        wrap: Vector::new(0, 0),
+        point: None,
+    };
+    fn new(bounds: Bounds) -> Self {
+        if bounds.is_empty() {
+            Self::EMPTY
+        } else {
+            let size = bounds.size();
+            Self {
+                bounds,
+                step: Vector::new(1, 0),
+                wrap: Vector::new(-size.width() + 1, 1),
+                point: Some(bounds.top_left()),
+            }
+        }
+    }
+}
+
+impl Iterator for PointIter {
+    type Item = Point;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if let Some(point) = self.point {
+            let xy: [i32; 2] = point.vector(&self.bounds.bottom_right()).signum().into();
+            self.point = match xy {
+                [-1, _] => Some(point + self.step),
+                [_, -1] => Some(point + self.wrap),
+                _ => None,
+            };
+
+            Some(point)
+        } else {
+            None
+        }
+    }
 }
 
 impl Debug for Bounds {
@@ -378,6 +431,33 @@ fn test_bounds_contains() {
 fn test_bounds_size() {
     let bounds = Bounds::new(-5, 10, 5, -10);
     assert_eq!(Size::new(21, 11), bounds.size());
+}
+
+#[test]
+fn test_bounds_iter_points() {
+    let bounds = Bounds::new(-1, 1, 2, -2);
+    let mut i = bounds.iter_points();
+    assert_eq!(Some(Point::new(-2, -1)), i.next());
+    assert_eq!(Some(Point::new(-1, -1)), i.next());
+    assert_eq!(Some(Point::new(0, -1)), i.next());
+    assert_eq!(Some(Point::new(1, -1)), i.next());
+
+    assert_eq!(Some(Point::new(-2, 0)), i.next());
+    assert_eq!(Some(Point::new(-1, 0)), i.next());
+    assert_eq!(Some(Point::new(0, 0)), i.next());
+    assert_eq!(Some(Point::new(1, 0)), i.next());
+
+    assert_eq!(Some(Point::new(-2, 1)), i.next());
+    assert_eq!(Some(Point::new(-1, 1)), i.next());
+    assert_eq!(Some(Point::new(0, 1)), i.next());
+    assert_eq!(Some(Point::new(1, 1)), i.next());
+
+    assert_eq!(Some(Point::new(-2, 2)), i.next());
+    assert_eq!(Some(Point::new(-1, 2)), i.next());
+    assert_eq!(Some(Point::new(0, 2)), i.next());
+    assert_eq!(Some(Point::new(1, 2)), i.next());
+
+    assert_eq!(None, i.next());
 }
 
 #[test]
