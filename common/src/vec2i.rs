@@ -203,6 +203,12 @@ impl Debug for Vector {
     }
 }
 
+impl From<Vector> for [i32; 2] {
+    fn from(value: Vector) -> Self {
+        value.0.to_array()
+    }
+}
+
 #[test]
 fn test_manhattan_len() {
     assert_eq!(1, Vector::new(0, 1).manhattan_len());
