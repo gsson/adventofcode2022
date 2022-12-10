@@ -234,6 +234,12 @@ impl Bounds {
     }
 
     #[inline]
+    pub fn with_size(size: impl Into<Size>) -> Self {
+        let size = size.into();
+        Self(ORIGIN, Point(size.0 - Self::SIZE_ADJUST))
+    }
+
+    #[inline]
     pub fn extend_to(&self, p: &Point) -> Bounds {
         let top_left = self.top_left().0.simd_min(p.0);
         let bottom_right = self.bottom_right().0.simd_max(p.0);
