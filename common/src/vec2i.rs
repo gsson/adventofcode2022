@@ -298,6 +298,10 @@ impl Bounds {
             as usize
     }
 
+    pub fn iter_indices(&self) -> IndexIter {
+        IndexIter::new(*self)
+    }
+
     #[inline]
     pub fn size(&self) -> Size {
         Size(self.1 .0 - self.0 .0 + Self::SIZE_ADJUST)
@@ -353,6 +357,43 @@ impl Iterator for PointIter {
             Some(point)
         } else {
             None
+        }
+    }
+}
+
+pub struct IndexIter {
+    end: usize,
+    next_index: usize,
+}
+
+impl IndexIter {
+    const EMPTY: IndexIter = Self {
+        end: 0,
+        next_index: 1,
+    };
+
+    fn new(bounds: Bounds) -> Self {
+        if bounds.is_empty() {
+            Self::EMPTY
+        } else {
+            Self {
+                end: bounds.index(&bounds.bottom_right()),
+                next_index: bounds.index(&bounds.top_left()),
+            }
+        }
+    }
+}
+
+impl Iterator for IndexIter {
+    type Item = usize;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let index = self.next_index;
+        if index > self.end {
+            None
+        } else {
+            self.next_index += 1;
+            Some(index)
         }
     }
 }
@@ -456,6 +497,33 @@ fn test_bounds_iter_points() {
     assert_eq!(Some(Point::new(-1, 2)), i.next());
     assert_eq!(Some(Point::new(0, 2)), i.next());
     assert_eq!(Some(Point::new(1, 2)), i.next());
+
+    assert_eq!(None, i.next());
+}
+
+#[test]
+fn test_bounds_iter_indices() {
+    let bounds = Bounds::new(-1, 1, 2, -2);
+    let mut i = bounds.iter_indices();
+    assert_eq!(Some(0), i.next());
+    assert_eq!(Some(1), i.next());
+    assert_eq!(Some(2), i.next());
+    assert_eq!(Some(3), i.next());
+
+    assert_eq!(Some(4), i.next());
+    assert_eq!(Some(5), i.next());
+    assert_eq!(Some(6), i.next());
+    assert_eq!(Some(7), i.next());
+
+    assert_eq!(Some(8), i.next());
+    assert_eq!(Some(9), i.next());
+    assert_eq!(Some(10), i.next());
+    assert_eq!(Some(11), i.next());
+
+    assert_eq!(Some(12), i.next());
+    assert_eq!(Some(13), i.next());
+    assert_eq!(Some(14), i.next());
+    assert_eq!(Some(15), i.next());
 
     assert_eq!(None, i.next());
 }
