@@ -1,7 +1,7 @@
 use std::fmt::{Debug, Formatter};
 use std::ops::{Add, Div, Mul, Neg, Range, Sub};
 use std::simd::Which::{First, Second};
-use std::simd::{simd_swizzle, Simd, SimdInt, SimdOrd, SimdPartialOrd};
+use std::simd::{simd_swizzle, Simd, SimdInt, SimdOrd, SimdPartialEq, SimdPartialOrd};
 /*
   Note: This is for me to learn the basics of portable SIMD. It's unlikely to be more performant
   than using non-SIMD operations
@@ -284,6 +284,23 @@ impl Bounds {
     #[inline]
     pub fn left(&self) -> i32 {
         self.0.x()
+    }
+
+    pub fn cardinals(&self, p: Point) -> impl Iterator<Item = Point> {
+        debug_assert!(self.contains(&p));
+        let pointpoint = simd_swizzle!(p.0, [0, 1, 0, 1]);
+        let lefttoprightbottom = simd_swizzle!(
+            self.0 .0,
+            self.1 .0,
+            [First(0), First(1), Second(0), Second(1)]
+        );
+        let at_edge = pointpoint.simd_ne(lefttoprightbottom).to_array();
+
+        at_edge
+            .into_iter()
+            .zip([LEFT, UP, RIGHT, DOWN])
+            .filter_map(|(mask, direction)| mask.then_some(direction))
+            .map(move |direction| p + direction)
     }
 
     #[inline]
