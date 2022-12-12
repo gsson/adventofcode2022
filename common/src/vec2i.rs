@@ -292,8 +292,8 @@ impl Bounds {
     }
 
     #[inline]
-    pub fn index(&self, p: &Point) -> usize {
-        debug_assert!(self.contains(p));
+    pub fn index(&self, p: Point) -> usize {
+        debug_assert!(self.contains(&p));
         ((p.0 - self.top_left().0) * Simd::from_array([1, self.size().width()])).reduce_sum()
             as usize
     }
@@ -381,8 +381,8 @@ impl IndexIter {
             Self::EMPTY
         } else {
             Self {
-                end: bounds.index(&bounds.bottom_right()),
-                next_index: bounds.index(&bounds.top_left()),
+                end: bounds.index(bounds.bottom_right()),
+                next_index: bounds.index(bounds.top_left()),
             }
         }
     }
@@ -421,9 +421,9 @@ impl IndexRowIter {
         } else {
             let width = bounds.size().width() as usize;
             Self {
-                end: bounds.index(&bounds.bottom_right()),
+                end: bounds.index(bounds.bottom_right()),
                 width,
-                next_row_start: bounds.index(&bounds.top_left()),
+                next_row_start: bounds.index(bounds.top_left()),
             }
         }
     }

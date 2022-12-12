@@ -15,7 +15,7 @@ impl CharCanvas {
     }
 
     #[inline]
-    fn index(&self, p: &Point) -> usize {
+    fn index(&self, p: Point) -> usize {
         self.bounds.index(p)
     }
 
@@ -58,7 +58,7 @@ impl Index<Point> for CharCanvas {
 
     fn index(&self, p: Point) -> &Self::Output {
         if self.bounds.contains(&p) {
-            let index = self.index(&p);
+            let index = self.index(p);
             &self.tiles[index]
         } else {
             &self.empty
@@ -88,7 +88,7 @@ impl IndexMut<Point> for CharCanvas {
                 tiles,
             }
         }
-        let index = self.index(&p);
+        let index = self.index(p);
         &mut self.tiles[index]
     }
 }

@@ -48,7 +48,7 @@ impl Index<Point> for Map {
     type Output = i8;
 
     fn index(&self, coord: Point) -> &Self::Output {
-        &self.map[self.bounds.index(&coord)]
+        &self.map[self.bounds.index(coord)]
     }
 }
 
