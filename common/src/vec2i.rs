@@ -298,6 +298,14 @@ impl Bounds {
             as usize
     }
 
+    #[inline]
+    pub fn from_index(&self, index: usize) -> Point {
+        let width = self.size().width();
+        let p = Point::new(index as i32 % width, index as i32 / width);
+        debug_assert!(self.contains(&p));
+        p
+    }
+
     pub fn iter_indices(&self) -> IndexIter {
         IndexIter::new(*self)
     }
