@@ -1,3 +1,5 @@
+#![feature(iter_array_chunks)]
+
 use crate::Value::{List, Number};
 use std::cmp::Ordering;
 use std::slice;
@@ -10,13 +12,6 @@ const EXAMPLE: &str = include_str!("example.txt");
 fn main() {
     eprintln!("part1 {:?}", part1(INPUT));
     eprintln!("part2 {:?}", part2(INPUT));
-}
-
-fn parse_value_pairs(input: &str) -> impl Iterator<Item = (Value, Value)> + '_ {
-    input
-        .split_terminator("\n\n")
-        .filter_map(|pair| pair.split_once('\n'))
-        .map(|(first, second)| (first.parse().unwrap(), second.parse().unwrap()))
 }
 
 fn parse_values(input: &str) -> impl Iterator<Item = Value> + '_ {
@@ -107,9 +102,10 @@ impl Ord for Value {
 }
 
 fn part1(input: &str) -> usize {
-    parse_value_pairs(input)
+    parse_values(input)
+        .array_chunks::<2>()
         .enumerate()
-        .filter(|(_, (left, right))| left <= right)
+        .filter(|(_, [left, right])| left <= right)
         .fold(0, |a, (i, _)| a + i + 1)
 }
 
