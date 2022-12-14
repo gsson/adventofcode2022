@@ -71,19 +71,27 @@ impl From<[i32; 2]> for Point {
     }
 }
 
-impl Add<Vector> for Point {
+impl<T> Add<T> for Point
+where
+    T: Into<Vector>,
+{
     type Output = Point;
 
-    fn add(self, rhs: Vector) -> Self::Output {
-        Self(self.0 + rhs.0)
+    #[inline]
+    fn add(self, rhs: T) -> Self::Output {
+        Self(self.0 + rhs.into().0)
     }
 }
 
-impl Sub<Vector> for Point {
+impl<T> Sub<T> for Point
+where
+    T: Into<Vector>,
+{
     type Output = Point;
 
-    fn sub(self, rhs: Vector) -> Self::Output {
-        Self(self.0 - rhs.0)
+    #[inline]
+    fn sub(self, rhs: T) -> Self::Output {
+        Self(self.0 - rhs.into().0)
     }
 }
 
@@ -154,25 +162,34 @@ impl const From<[i32; 2]> for Vector {
     }
 }
 
-impl Add<Vector> for Vector {
+impl<T> Add<T> for Vector
+where
+    T: Into<Vector>,
+{
     type Output = Vector;
 
-    fn add(self, rhs: Vector) -> Self::Output {
-        Self(self.0 + rhs.0)
+    #[inline]
+    fn add(self, rhs: T) -> Self::Output {
+        Self(self.0 + rhs.into().0)
     }
 }
 
-impl Sub<Vector> for Vector {
+impl<T> Sub<T> for Vector
+where
+    T: Into<Vector>,
+{
     type Output = Vector;
 
-    fn sub(self, rhs: Vector) -> Self::Output {
-        Self(self.0 - rhs.0)
+    #[inline]
+    fn sub(self, rhs: T) -> Self::Output {
+        Self(self.0 - rhs.into().0)
     }
 }
 
 impl Mul<i32> for Vector {
     type Output = Vector;
 
+    #[inline]
     fn mul(self, rhs: i32) -> Self::Output {
         Self(self.0 * Simd::splat(rhs))
     }
@@ -181,6 +198,7 @@ impl Mul<i32> for Vector {
 impl Div<i32> for Vector {
     type Output = Vector;
 
+    #[inline]
     fn div(self, rhs: i32) -> Self::Output {
         Self(self.0 / Simd::splat(rhs))
     }
@@ -189,6 +207,7 @@ impl Div<i32> for Vector {
 impl Neg for Vector {
     type Output = Vector;
 
+    #[inline]
     fn neg(self) -> Self::Output {
         Self(self.0.neg())
     }
