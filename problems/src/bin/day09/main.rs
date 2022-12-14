@@ -41,7 +41,7 @@ fn move_tail(head: &Point, tail: &Point) -> Point {
 fn part1(input: &str) -> usize {
     let tail_positions = parse_moves(input)
         .scan(Point::default(), |head, mv| {
-            *head = *head + mv;
+            *head += mv;
             Some(*head)
         })
         .scan(Point::default(), |tail, head| {
@@ -68,7 +68,7 @@ fn part2(input: &str) -> usize {
         .scan(
             (Point::default(), [Point::default(); 9]),
             |(head, tails), mv| {
-                *head = *head + mv;
+                *head += mv;
                 let end = tails.iter_mut().fold(*head, |prev, current| {
                     *current = move_tail(&prev, current);
                     *current

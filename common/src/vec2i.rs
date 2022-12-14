@@ -1,5 +1,5 @@
 use std::fmt::{Debug, Formatter};
-use std::ops::{Add, Div, Mul, Neg, Range, Sub};
+use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Range, Sub, SubAssign};
 use std::simd::Which::{First, Second};
 use std::simd::{simd_swizzle, Simd, SimdInt, SimdOrd, SimdPartialEq, SimdPartialOrd};
 /*
@@ -83,6 +83,16 @@ where
     }
 }
 
+impl<T> AddAssign<T> for Point
+where
+    T: Into<Vector>,
+{
+    #[inline]
+    fn add_assign(&mut self, rhs: T) {
+        self.0 += rhs.into().0
+    }
+}
+
 impl<T> Sub<T> for Point
 where
     T: Into<Vector>,
@@ -92,6 +102,16 @@ where
     #[inline]
     fn sub(self, rhs: T) -> Self::Output {
         Self(self.0 - rhs.into().0)
+    }
+}
+
+impl<T> SubAssign<T> for Point
+where
+    T: Into<Vector>,
+{
+    #[inline]
+    fn sub_assign(&mut self, rhs: T) {
+        self.0 -= rhs.into().0
     }
 }
 
@@ -157,6 +177,7 @@ impl Vector {
 }
 
 impl const From<[i32; 2]> for Vector {
+    #[inline]
     fn from(p: [i32; 2]) -> Self {
         Self(Simd::from_array(p))
     }
@@ -174,6 +195,16 @@ where
     }
 }
 
+impl<T> AddAssign<T> for Vector
+where
+    T: Into<Vector>,
+{
+    #[inline]
+    fn add_assign(&mut self, rhs: T) {
+        self.0 += rhs.into().0
+    }
+}
+
 impl<T> Sub<T> for Vector
 where
     T: Into<Vector>,
@@ -186,6 +217,16 @@ where
     }
 }
 
+impl<T> SubAssign<T> for Vector
+where
+    T: Into<Vector>,
+{
+    #[inline]
+    fn sub_assign(&mut self, rhs: T) {
+        self.0 -= rhs.into().0
+    }
+}
+
 impl Mul<i32> for Vector {
     type Output = Vector;
 
@@ -195,12 +236,26 @@ impl Mul<i32> for Vector {
     }
 }
 
+impl MulAssign<i32> for Vector {
+    #[inline]
+    fn mul_assign(&mut self, rhs: i32) {
+        self.0 *= Simd::splat(rhs)
+    }
+}
+
 impl Div<i32> for Vector {
     type Output = Vector;
 
     #[inline]
     fn div(self, rhs: i32) -> Self::Output {
         Self(self.0 / Simd::splat(rhs))
+    }
+}
+
+impl DivAssign<i32> for Vector {
+    #[inline]
+    fn div_assign(&mut self, rhs: i32) {
+        self.0 /= Simd::splat(rhs)
     }
 }
 
