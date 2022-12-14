@@ -84,19 +84,11 @@ impl PartialOrd<Self> for Value {
 
 impl Ord for Value {
     fn cmp(&self, other: &Self) -> Ordering {
-        fn compare_slices(left: &[Value], right: &[Value]) -> Ordering {
-            match (left, right) {
-                ([], []) => Ordering::Equal,
-                ([], _) => Ordering::Less,
-                (_, []) => Ordering::Greater,
-                ([h1, t1 @ ..], [h2, t2 @ ..]) => h1.cmp(h2).then_with(|| compare_slices(t1, t2)),
-            }
-        }
         match (self, other) {
             (Number(left), Number(right)) => left.cmp(right),
-            (left @ Number(_), List(right)) => compare_slices(slice::from_ref(left), right),
-            (List(left), right @ Number(_)) => compare_slices(left, slice::from_ref(right)),
-            (List(left), List(right)) => compare_slices(left, right),
+            (List(left), List(right)) => left.cmp(right),
+            (left @ Number(_), List(right)) => slice::from_ref(left).cmp(right),
+            (List(left), right @ Number(_)) => left.as_slice().cmp(slice::from_ref(right)),
         }
     }
 }
