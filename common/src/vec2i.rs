@@ -65,12 +65,6 @@ impl AsMut<[i32; 2]> for Point {
     }
 }
 
-impl From<(i32, i32)> for Point {
-    fn from((x, y): (i32, i32)) -> Self {
-        Point(Simd::from_array([x, y]))
-    }
-}
-
 impl From<[i32; 2]> for Point {
     fn from(p: [i32; 2]) -> Self {
         Point(Simd::from_array(p))
@@ -151,12 +145,6 @@ impl Vector {
     #[inline]
     pub fn manhattan_len(&self) -> i32 {
         self.0.abs().reduce_sum()
-    }
-}
-
-impl const From<(i32, i32)> for Vector {
-    fn from((x, y): (i32, i32)) -> Self {
-        Self(Simd::from_array([x, y]))
     }
 }
 
