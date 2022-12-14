@@ -74,6 +74,40 @@ impl<T: Copy> Grid2d<T> {
         }
     }
 
+    pub fn line(&mut self, p1: &Point, p2: &Point, tile: T) {
+        let step: [i32; 2] = p2.vector(p1).into();
+        let new_bounds = self.bounds.extend_to(p1).extend_to(p2);
+        self.extend_to_bounds(&new_bounds);
+        let i1 = self.indexer.index(p1);
+        let i2 = self.indexer.index(p2);
+
+        match step {
+            [0, 0] => {
+                self.tiles[i1] = tile;
+            }
+            [dx, 0] => {
+                if dx > 0 {
+                    self.tiles[i1..=i2].fill(tile);
+                } else {
+                    self.tiles[i2..=i1].fill(tile);
+                }
+            }
+            [0, dy] => {
+                let width = new_bounds.size().width() as usize;
+                if dy > 0 {
+                    for i in (i1..=i2).step_by(width) {
+                        self.tiles[i] = tile
+                    }
+                } else {
+                    for i in (i2..=i1).step_by(width) {
+                        self.tiles[i] = tile
+                    }
+                }
+            }
+            _ => unreachable!("Unsupported line slope {:?}", step),
+        }
+    }
+
     fn extend_grid(&self, bounds: Bounds) -> Self {
         let size = bounds.size();
         let mut tiles = vec![self.empty; size.area() as usize];
