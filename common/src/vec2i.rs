@@ -15,17 +15,20 @@ pub struct Point(Simd<i32, 2>);
 impl Point {
     const X: usize = 0;
     const Y: usize = 1;
+
     #[inline]
     pub const fn new(x: i32, y: i32) -> Self {
         Self(Simd::from_array([x, y]))
     }
+
     #[inline]
-    pub fn x(&self) -> i32 {
-        self.0[Point::X]
+    pub const fn x(&self) -> i32 {
+        self.0.as_array()[Point::X]
     }
+
     #[inline]
-    pub fn y(&self) -> i32 {
-        self.0[Point::Y]
+    pub const fn y(&self) -> i32 {
+        self.0.as_array()[Point::Y]
     }
 
     #[inline]
@@ -112,30 +115,39 @@ pub const UP_LEFT: Vector = Vector::new(-1, -1);
 pub struct Vector(Simd<i32, 2>);
 
 impl Vector {
+    const X: usize = 0;
+    const Y: usize = 1;
+
     #[inline]
-    const fn new(x: i32, y: i32) -> Self {
+    pub const fn new(x: i32, y: i32) -> Self {
         Self(Simd::from_array([x, y]))
     }
+
     #[inline]
-    pub fn x(&self) -> i32 {
-        self.0[0]
+    pub const fn x(&self) -> i32 {
+        self.0.as_array()[Self::X]
     }
+
     #[inline]
-    pub fn y(&self) -> i32 {
-        self.0[1]
+    pub const fn y(&self) -> i32 {
+        self.0.as_array()[Self::Y]
     }
+
     #[inline]
     pub fn abs(&self) -> Self {
         Self(self.0.abs())
     }
+
     #[inline]
     pub fn max_component(&self) -> i32 {
         self.0.reduce_max()
     }
+
     #[inline]
     pub fn signum(&self) -> Self {
         Self(self.0.signum())
     }
+
     #[inline]
     pub fn manhattan_len(&self) -> i32 {
         self.0.abs().reduce_sum()
@@ -252,13 +264,13 @@ impl Bounds {
     }
 
     #[inline]
-    pub fn top_right(&self) -> Point {
-        Point(simd_swizzle!(self.0 .0, self.1 .0, [Second(0), First(1)]))
+    pub const fn top_right(&self) -> Point {
+        Point::new(self.right(), self.top())
     }
 
     #[inline]
     pub fn bottom_left(&self) -> Point {
-        Point(simd_swizzle!(self.0 .0, self.1 .0, [First(0), Second(1)]))
+        Point::new(self.left(), self.bottom())
     }
 
     #[inline]
@@ -267,22 +279,22 @@ impl Bounds {
     }
 
     #[inline]
-    pub fn top(&self) -> i32 {
+    pub const fn top(&self) -> i32 {
         self.0.y()
     }
 
     #[inline]
-    pub fn right(&self) -> i32 {
+    pub const fn right(&self) -> i32 {
         self.1.x()
     }
 
     #[inline]
-    pub fn bottom(&self) -> i32 {
+    pub const fn bottom(&self) -> i32 {
         self.1.y()
     }
 
     #[inline]
-    pub fn left(&self) -> i32 {
+    pub const fn left(&self) -> i32 {
         self.0.x()
     }
 
@@ -493,13 +505,13 @@ impl Size {
     }
 
     #[inline]
-    pub fn width(&self) -> i32 {
-        self.0[Size::WIDTH]
+    pub const fn width(&self) -> i32 {
+        self.0.as_array()[Size::WIDTH]
     }
 
     #[inline]
-    pub fn height(&self) -> i32 {
-        self.0[Size::HEIGHT]
+    pub const fn height(&self) -> i32 {
+        self.0.as_array()[Size::HEIGHT]
     }
 
     pub fn area(&self) -> i32 {
