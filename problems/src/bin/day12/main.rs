@@ -33,8 +33,8 @@ fn parse_input(input: &str) -> (Point, Point, HeightMap) {
         })
         .collect::<Vec<_>>();
     let heights = HeightMap::from_parts(i8::MAX, columns, heights);
-    let start = heights.bounds.from_index(start);
-    let goal = heights.bounds.from_index(goal);
+    let start = heights.from_index(start);
+    let goal = heights.from_index(goal);
     (start, goal, heights)
 }
 

@@ -1,7 +1,7 @@
 use std::fmt::{Debug, Formatter};
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Range, Sub, SubAssign};
 use std::simd::Which::{First, Second};
-use std::simd::{simd_swizzle, Simd, SimdInt, SimdOrd, SimdPartialEq, SimdPartialOrd};
+use std::simd::{simd_swizzle, Simd, SimdInt, SimdOrd, SimdPartialEq, SimdPartialOrd, SimdUint};
 /*
   Note: This is for me to learn the basics of portable SIMD. It's unlikely to be more performant
   than using non-SIMD operations
@@ -308,6 +308,11 @@ impl Bounds {
     }
 
     #[inline]
+    pub const fn point(point: Point) -> Self {
+        Self(point, point)
+    }
+
+    #[inline]
     pub fn with_size(size: impl Into<Size>) -> Self {
         let size = size.into();
         Self(ORIGIN, Point(size.0 - Self::SIZE_ADJUST))
@@ -383,18 +388,8 @@ impl Bounds {
     }
 
     #[inline]
-    pub fn index(&self, p: Point) -> usize {
-        debug_assert!(self.contains(&p));
-        ((p.0 - self.top_left().0) * Simd::from_array([1, self.size().width()])).reduce_sum()
-            as usize
-    }
-
-    #[inline]
-    pub fn from_index(&self, index: usize) -> Point {
-        let width = self.size().width();
-        let p = Point::new(index as i32 % width, index as i32 / width);
-        debug_assert!(self.contains(&p));
-        p
+    pub fn indexer(&self) -> Indexer {
+        Indexer::new(self)
     }
 
     pub fn iter_indices(&self) -> IndexIter {
@@ -411,8 +406,61 @@ impl Bounds {
     }
 
     #[inline]
+    pub const fn const_size(&self) -> Size {
+        let width = self.right() - self.left() + 1;
+        let height = self.bottom() - self.top() + 1;
+        Size::new(width, height)
+    }
+
+    #[inline]
     pub fn iter_points(&self) -> PointIter {
         PointIter::new(*self)
+    }
+
+    pub fn walk(&self, from: Point, step: Vector) -> impl Iterator<Item = Point> + '_ {
+        let mut here = from;
+        std::iter::from_fn(move || {
+            if self.contains(&here) {
+                let next = here + step;
+                Some(std::mem::replace(&mut here, next))
+            } else {
+                None
+            }
+        })
+    }
+}
+
+#[derive(Copy, Clone)]
+pub struct Indexer {
+    top_left: Simd<i32, 2>,
+    width: usize,
+    mul: Simd<usize, 2>,
+}
+
+impl Indexer {
+    pub const fn new(bounds: &Bounds) -> Self {
+        let width = bounds.const_size().width() as usize;
+        Self {
+            top_left: bounds.top_left().0,
+            width,
+            mul: Simd::from_array([1, width]),
+        }
+    }
+
+    #[inline]
+    pub fn index(&self, p: &Point) -> usize {
+        let adjusted = p.0 - self.top_left;
+        debug_assert!(adjusted.simd_ge(Simd::from_array([0, 0])).all());
+        let adjusted = adjusted.cast::<usize>();
+        (adjusted * self.mul).reduce_sum()
+    }
+
+    #[inline]
+    pub fn from_index(&self, index: usize) -> Point {
+        let width = self.width;
+        let xy = Simd::from_array([index % width, index / width]).cast::<i32>();
+        let xy = xy + self.top_left;
+        Point(xy)
     }
 }
 
@@ -479,9 +527,10 @@ impl IndexIter {
         if bounds.is_empty() {
             Self::EMPTY
         } else {
+            let indexer = bounds.indexer();
             Self {
-                end: bounds.index(bounds.bottom_right()),
-                next_index: bounds.index(bounds.top_left()),
+                end: indexer.index(&bounds.bottom_right()),
+                next_index: indexer.index(&bounds.top_left()),
             }
         }
     }
@@ -519,10 +568,12 @@ impl IndexRowIter {
             Self::EMPTY
         } else {
             let width = bounds.size().width() as usize;
+            let indexer = bounds.indexer();
+
             Self {
-                end: bounds.index(bounds.bottom_right()),
+                end: indexer.index(&bounds.bottom_right()),
                 width,
-                next_row_start: bounds.index(bounds.top_left()),
+                next_row_start: indexer.index(&bounds.top_left()),
             }
         }
     }

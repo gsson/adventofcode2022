@@ -1,55 +1,21 @@
-use adventofcode2022_common::vec2i::{Bounds, Point, Vector, DOWN, LEFT, RIGHT, UP};
+use adventofcode2022_common::grid2d::Grid2d;
+use adventofcode2022_common::vec2i::{Point, Vector, DOWN, LEFT, RIGHT, UP};
 use std::collections::HashSet;
-use std::ops::Index;
 
 const INPUT: &[u8] = include_bytes!("input.txt");
 #[cfg(test)]
 const EXAMPLE: &[u8] = include_bytes!("example.txt");
 
-struct Map {
-    bounds: Bounds,
-    map: Vec<i8>,
-}
+type Map = Grid2d<i8>;
 
-impl Map {
-    fn load(input: &[u8]) -> Self {
-        let columns = input.iter().position(|c| *c == b'\n').unwrap();
-        let map = input
-            .iter()
-            .filter_map(|c| (*c != b'\n').then(|| (c - b'0') as i8))
-            .collect::<Vec<_>>();
-        let rows = map.len() / columns;
+fn load(input: &[u8]) -> Map {
+    let columns = input.iter().position(|c| *c == b'\n').unwrap();
+    let tiles = input
+        .iter()
+        .filter_map(|c| (*c != b'\n').then(|| (c - b'0') as i8))
+        .collect::<Vec<_>>();
 
-        Self {
-            bounds: Bounds::new(0, (columns - 1) as i32, (rows - 1) as i32, 0),
-            map,
-        }
-    }
-
-    fn iterate(&self, from: Point, step: Vector) -> impl Iterator<Item = Point> + '_ {
-        let mut here = from;
-        std::iter::from_fn(move || {
-            if self.bounds.contains(&here) {
-                let next = here + step;
-                Some(std::mem::replace(&mut here, next))
-            } else {
-                None
-            }
-        })
-    }
-
-    fn all_points(&self) -> impl Iterator<Item = Point> + '_ {
-        self.iterate(self.bounds.top_left(), RIGHT)
-            .flat_map(|c| self.iterate(c, DOWN))
-    }
-}
-
-impl Index<Point> for Map {
-    type Output = i8;
-
-    fn index(&self, coord: Point) -> &Self::Output {
-        &self.map[self.bounds.index(coord)]
-    }
+    Grid2d::from_parts(0, columns as i32, tiles)
 }
 
 fn main() {
@@ -74,20 +40,21 @@ fn visible_trees<'a>(
 }
 
 fn part1(input: &[u8]) -> usize {
-    let map = Map::load(input);
+    let map = load(input);
 
-    let right = map
-        .iterate(map.bounds.top_left(), DOWN)
-        .flat_map(|c| visible_trees(&map, map.iterate(c, RIGHT)));
-    let left = map
-        .iterate(map.bounds.top_right(), DOWN)
-        .flat_map(|c| visible_trees(&map, map.iterate(c, LEFT)));
-    let down = map
-        .iterate(map.bounds.top_left(), RIGHT)
-        .flat_map(|c| visible_trees(&map, map.iterate(c, DOWN)));
-    let up = map
-        .iterate(map.bounds.bottom_left(), RIGHT)
-        .flat_map(|c| visible_trees(&map, map.iterate(c, UP)));
+    let bounds = map.bounds;
+    let right = bounds
+        .walk(bounds.top_left(), DOWN)
+        .flat_map(|c| visible_trees(&map, bounds.walk(c, RIGHT)));
+    let left = bounds
+        .walk(bounds.top_right(), DOWN)
+        .flat_map(|c| visible_trees(&map, bounds.walk(c, LEFT)));
+    let down = bounds
+        .walk(bounds.top_left(), RIGHT)
+        .flat_map(|c| visible_trees(&map, bounds.walk(c, DOWN)));
+    let up = bounds
+        .walk(bounds.bottom_left(), RIGHT)
+        .flat_map(|c| visible_trees(&map, bounds.walk(c, UP)));
 
     right
         .chain(left)
@@ -110,9 +77,12 @@ fn part1_verify() {
 
 fn score_direction(map: &Map, coord: Point, step: Vector) -> Option<i32> {
     let height = map[coord];
-    map.iterate(coord + step, step)
+    let bounds = map.bounds;
+    let score = bounds
+        .walk(coord + step, step)
         .find(|c| map[*c] >= height)
-        .map(|c| coord.manhattan_distance(&c))
+        .map(|c| coord.manhattan_distance(&c));
+    score
 }
 
 fn score(map: &Map, coord: Point) -> i32 {
@@ -125,9 +95,10 @@ fn score(map: &Map, coord: Point) -> i32 {
 }
 
 fn part2(input: &[u8]) -> i32 {
-    let map = Map::load(input);
+    let map = load(input);
 
-    map.all_points()
+    map.bounds
+        .iter_points()
         .map(|coord| score(&map, coord))
         .max()
         .unwrap()
