@@ -30,17 +30,14 @@ impl<T: Copy> Grid2d<T> {
     pub fn new(empty: T) -> Self {
         Self {
             empty,
-            bounds: Bounds::new(0, -1, -1, 0),
-            indexer: Indexer::new(&Bounds::new(0, -1, -1, 0)),
+            bounds: Bounds::EMPTY,
+            indexer: Indexer::new(&Bounds::EMPTY),
             tiles: vec![],
         }
     }
 
-    pub fn from_parts(empty: T, width: i32, tiles: Vec<T>) -> Self {
-        let len = tiles.len() as i32;
-        debug_assert!(len % width == 0);
-        let height = len / width;
-        let bounds = Bounds::with_size([width, height]);
+    pub fn from_parts(empty: T, bounds: Bounds, tiles: Vec<T>) -> Self {
+        debug_assert_eq!(tiles.len(), bounds.size().area() as usize);
         let indexer = Indexer::new(&bounds);
 
         Self {
@@ -77,16 +74,9 @@ impl<T: Copy> Grid2d<T> {
         }
     }
 
-    pub fn extend_to(&mut self, p: &Point) {
-        let bounds = if self.bounds.is_empty() {
-            Bounds::point(*p)
-        } else {
-            self.bounds.extend_to(p)
-        };
-        let indexer = Indexer::new(&bounds);
-        let empty = self.empty;
+    fn extend_grid(&self, bounds: Bounds) -> Self {
         let size = bounds.size();
-        let mut tiles = vec![empty; size.area() as usize];
+        let mut tiles = vec![self.empty; size.area() as usize];
         let offset = self.bounds.top_left().vector(&bounds.top_left());
         let [old_width, old_height]: [i32; 2] = self.size().into();
         for row in 0..old_height {
@@ -96,11 +86,20 @@ impl<T: Copy> Grid2d<T> {
             let dst_end = dst_start + old_width as usize;
             tiles[dst_start..dst_end].copy_from_slice(&self.tiles[src_start..src_end]);
         }
-        *self = Self {
-            empty,
-            bounds,
-            indexer,
-            tiles,
+        Self::from_parts(self.empty, bounds, tiles)
+    }
+
+    pub fn extend_to_bounds(&mut self, b: &Bounds) {
+        let new_bounds = self.bounds.extend_to_bounds(b);
+        if new_bounds != self.bounds {
+            *self = self.extend_grid(new_bounds)
+        }
+    }
+
+    pub fn extend_to_point(&mut self, p: &Point) {
+        let bounds = self.bounds.extend_to(p);
+        if bounds != self.bounds {
+            *self = self.extend_grid(bounds);
         }
     }
 
@@ -127,7 +126,7 @@ impl<T: Copy> IndexMut<Point> for Grid2d<T> {
     #[inline]
     fn index_mut(&mut self, p: Point) -> &mut Self::Output {
         if !self.bounds.contains(&p) {
-            self.extend_to(&p);
+            self.extend_to_point(&p);
         }
         let index = self.index(p);
         &mut self.tiles[index]

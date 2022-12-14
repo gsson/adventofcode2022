@@ -295,6 +295,7 @@ fn test_manhattan_len() {
 pub struct Bounds(Point, Point);
 
 impl Bounds {
+    pub const EMPTY: Bounds = Bounds(Point::new(0, 0), Point::new(-1, -1));
     const SIZE_ADJUST: Simd<i32, 2> = Simd::from_array([1, 1]);
 
     #[inline]
@@ -304,7 +305,16 @@ impl Bounds {
 
     #[inline]
     pub const fn new(top: i32, right: i32, bottom: i32, left: i32) -> Self {
+        debug_assert!(top <= bottom);
+        debug_assert!(left <= right);
         Self(Point::new(left, top), Point::new(right, bottom))
+    }
+
+    #[inline]
+    pub fn from_points(p1: Point, p2: Point) -> Self {
+        let top_left = Point(p1.0.simd_min(p2.0));
+        let bottom_right = Point(p1.0.simd_max(p2.0));
+        Self(top_left, bottom_right)
     }
 
     #[inline]
@@ -314,15 +324,37 @@ impl Bounds {
 
     #[inline]
     pub fn with_size(size: impl Into<Size>) -> Self {
+        Self::with_top_left_and_size(ORIGIN, size)
+    }
+
+    #[inline]
+    pub fn with_top_left_and_size(top_left: impl Into<Point>, size: impl Into<Size>) -> Self {
+        let top_left = top_left.into();
         let size = size.into();
-        Self(ORIGIN, Point(size.0 - Self::SIZE_ADJUST))
+        let bottom_right = Point(top_left.0 + size.0 - Self::SIZE_ADJUST);
+        Self(top_left, bottom_right)
     }
 
     #[inline]
     pub fn extend_to(&self, p: &Point) -> Bounds {
-        let top_left = self.top_left().0.simd_min(p.0);
-        let bottom_right = self.bottom_right().0.simd_max(p.0);
-        Bounds(Point(top_left), Point(bottom_right))
+        if self.is_empty() {
+            Bounds::point(*p)
+        } else {
+            let top_left = self.top_left().0.simd_min(p.0);
+            let bottom_right = self.bottom_right().0.simd_max(p.0);
+            Bounds(Point(top_left), Point(bottom_right))
+        }
+    }
+
+    #[inline]
+    pub fn extend_to_bounds(&self, b: &Bounds) -> Bounds {
+        if self.is_empty() {
+            *b
+        } else {
+            let top_left = self.top_left().0.simd_min(b.top_left().0);
+            let bottom_right = self.bottom_right().0.simd_max(b.bottom_right().0);
+            Bounds(Point(top_left), Point(bottom_right))
+        }
     }
 
     #[inline]
@@ -473,7 +505,7 @@ pub struct PointIter {
 
 impl PointIter {
     const EMPTY: PointIter = Self {
-        bounds: Bounds::new(0, -1, -1, 0),
+        bounds: Bounds::EMPTY,
         step: Vector::new(0, 0),
         wrap: Vector::new(0, 0),
         point: None,
@@ -657,9 +689,7 @@ impl Debug for Size {
 fn test_bounds_is_empty() {
     assert!(!Bounds::new(0, 1, 1, 0).is_empty());
     assert!(!Bounds::new(0, 0, 0, 0).is_empty());
-    assert!(Bounds::new(0, -1, 1, 0).is_empty());
-    assert!(Bounds::new(0, -1, -1, 0).is_empty());
-    assert!(Bounds::new(0, 1, -1, 0).is_empty());
+    assert!(Bounds::EMPTY.is_empty());
 }
 
 #[test]
@@ -750,10 +780,10 @@ fn test_bounds_iter_indices() {
 
 #[test]
 fn test_accessors() {
-    let bounds = Bounds::new(1, 2, 3, 4);
+    let bounds = Bounds::new(1, 4, 3, 2);
 
-    assert_eq!(Point::new(2, 1), bounds.top_right());
-    assert_eq!(Point::new(4, 1), bounds.top_left());
-    assert_eq!(Point::new(2, 3), bounds.bottom_right());
-    assert_eq!(Point::new(4, 3), bounds.bottom_left());
+    assert_eq!(Point::new(4, 1), bounds.top_right());
+    assert_eq!(Point::new(2, 1), bounds.top_left());
+    assert_eq!(Point::new(4, 3), bounds.bottom_right());
+    assert_eq!(Point::new(2, 3), bounds.bottom_left());
 }

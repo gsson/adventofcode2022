@@ -1,5 +1,5 @@
 use adventofcode2022_common::grid2d::Grid2d;
-use adventofcode2022_common::vec2i::Point;
+use adventofcode2022_common::vec2i::{Bounds, Point};
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
 
@@ -32,7 +32,8 @@ fn parse_input(input: &str) -> (Point, Point, HeightMap) {
             _ => unreachable!(),
         })
         .collect::<Vec<_>>();
-    let heights = HeightMap::from_parts(i8::MAX, columns, heights);
+    let rows = heights.len() as i32 / columns;
+    let heights = HeightMap::from_parts(i8::MAX, Bounds::with_size([columns, rows]), heights);
     let start = heights.from_index(start);
     let goal = heights.from_index(goal);
     (start, goal, heights)

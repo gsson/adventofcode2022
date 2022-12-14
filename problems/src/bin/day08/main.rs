@@ -1,5 +1,5 @@
 use adventofcode2022_common::grid2d::Grid2d;
-use adventofcode2022_common::vec2i::{Point, Vector, DOWN, LEFT, RIGHT, UP};
+use adventofcode2022_common::vec2i::{Bounds, Point, Vector, DOWN, LEFT, RIGHT, UP};
 use std::collections::HashSet;
 
 const INPUT: &[u8] = include_bytes!("input.txt");
@@ -9,13 +9,13 @@ const EXAMPLE: &[u8] = include_bytes!("example.txt");
 type Map = Grid2d<i8>;
 
 fn load(input: &[u8]) -> Map {
-    let columns = input.iter().position(|c| *c == b'\n').unwrap();
+    let columns = input.iter().position(|c| *c == b'\n').unwrap() as i32;
     let tiles = input
         .iter()
         .filter_map(|c| (*c != b'\n').then(|| (c - b'0') as i8))
         .collect::<Vec<_>>();
-
-    Grid2d::from_parts(0, columns as i32, tiles)
+    let rows = tiles.len() as i32 / columns;
+    Grid2d::from_parts(0, Bounds::with_size([columns, rows]), tiles)
 }
 
 fn main() {
